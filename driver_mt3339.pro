@@ -7,7 +7,8 @@ INCLUDEPATH += \
     /opt/ros/melodic/include
 
 SOURCES += \
-    src/driver.cpp
+    src/driver.cpp \
+    src/message.cpp
 
 DISTFILES += \
     CMakeLists.txt \
@@ -15,4 +16,5 @@ DISTFILES += \
     package.xml
 
 HEADERS += \
-    src/driver.h
+    src/driver.h \
+    src/message.h
