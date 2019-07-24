@@ -4,138 +4,147 @@
 #include <iomanip>
 
 // CONSTRUCTORS
-message::message(id command_id)
+message::message(std::string talker, std::string type)
 {
-    // Create empty message with specified ID.
-    message::m_talker = message::talker::PMTK;
-    message::m_id = command_id;
+    message::construct(talker, type, std::vector<std::string>());
 }
-message::message(std::string serialized)
+message::message(std::string talker, std::string type, std::vector<std::string> data)
 {
-    // Deserialize message string.
-
-    // Determine talker.
-    // Check beginning of packet to determine talker.
-    // Most messages will be $GP
-    std::string sub_talker = serialized.substr(0, 3);
-    if(sub_talker.compare("$GP") == 0)
-    {
-        message::m_talker = message::talker::NMEA;
-    }
-
-    std::string sub_talker = serialized.substr(1, 4);
-    if(sub_talker.compare("PMTK") == 0)
-    {
-        message::m_talker = message::talker::PMTK;
-    }
-    else if(sub_talker.compare("NMEA") == 0)
-    {
-        message::m_talker = message::talker::NMEA;
-    }
-    else
-    {
-        message::m_talker = message::talker::UNKNOWN;
-    }
-
-    // Read command ID.
-    try
-    {
-        message::m_id = static_cast<message::id>(std::stoi(serialized.substr(5, 3)));
-    }
-    catch(...)
-    {
-        message::m_id = message::id::UNKNOWN;
-    }
-
-    // Read data fields.
-    unsigned long data_end = serialized.find('*');
-    unsigned long data_length = data_end - 8;
-    $PMTK000,1,2,3*
-    01234567891
-
-    if(data_end != 8)
-    {
-        // Data fields present.
-        // Find location of data field end.
-        std::string sub_data = serialized.substr(9, )
-    }
-    unsigned long position = serialized.find(',');
-    while(position != std::string::npos)
-    {
-        unsigned long start = position;
-        // Find the next comma position.
-        position = serialized.find(',');
-        // Extract current data field.
-        message::m_data.push_back(serialized.substr(position, ))
-    }
+    message::construct(talker, type, data);
+}
+message::message(std::string nmea_sentence)
+{
+    message::m_sentence = nmea_sentence;
 }
 
 // METHODS
-void message::add_field(unsigned int data)
+void message::construct(std::string talker, std::string type, std::vector<std::string> data)
 {
+    // Create stringstream for generating string.
+    std::stringstream stream;
 
+    // Set header, talker, and message type.
+    stream << '$'
+           << talker
+           << type;
+    // Add in data fields.
+    for(unsigned int d = 0; d < data.size(); d++)
+    {
+        stream << ','
+               << data.at(d);
+    }
+    // Add in data end flag.
+    stream << '*';
+    // Add in checksum, calculated on current stream.
+    stream << message::calculate_checksum(stream.str());
+    // Add CRLF footer.
+    stream << "\r\n";
+
+    // Store sentence.
+    message::m_sentence = stream.str();
 }
-unsigned int message::get_field(unsigned int address) const
+std::string message::calculate_checksum(std::string nmea_sentence)
 {
+    // Find location of *
+    unsigned long end_position = nmea_sentence.find_last_of('*');
 
-}
-std::string message::calculate_checksum() const
-{
+    // Checksum is XOR of everything between $ and *
+    unsigned char checksum = 0;
+    for(unsigned long i = 1; i < end_position; i++)
+    {
+        checksum ^= nmea_sentence.at(i);
+    }
 
+    // Convert checksum into hex string.
+    std::stringstream stream;
+    stream << std::hex << std::uppercase << std::setw(2) << std::setfill('0') << static_cast<unsigned int>(checksum);
+
+    // Return hex string.
+    return stream.str();
 }
 bool message::validate_checksum() const
 {
+    // Pull actual checksum substring.
+    // First find *
+    unsigned long position = message::m_sentence.find_last_of('*');
+    if(position == std::string::npos || position + 2 >= message::m_sentence.size())
+    {
+        // Malformed packet.
+        return false;
+    }
+    // Substring the actual checksum.
+    std::string actual = message::m_sentence.substr(position + 1, 2);
 
-}
-std::string message::serialize() const
-{
-    // Serialize message into string.
-    std::stringstream stream;
-    // Add header.
-    stream << '$';
-    // Add talker type.
-    switch(message::m_talker)
-    {
-    case message::talker::UNKNOWN:
-    {
-        stream << "UNKN";
-        break;
-    }
-    case message::talker::NMEA:
-    {
-        stream << "NMEA";
-        break;
-    }
-    case message::talker::PMTK:
-    {
-        stream << "PMTK";
-        break;
-    }
-    }
-    // Add message ID, with field width of 3.
-    stream << std::setw(3) << std::setfill('0') << static_cast<unsigned int>(message::m_id);
-    stream.copyfmt(std::ios(nullptr));
-    // Add data fields.
-    for(unsigned int n = 0; n < message::m_data.size(); n++)
-    {
-        stream << ',' << message::m_data.at(n);
-    }
-    // Add data end marker
-    stream << '*';
-    // Add checksum.
-    stream << message::calculate_checksum();
-    // Add footer.
-    stream << "\r\n";
+    // Calculate the checksum of the sentence.
+    std::string calculated = message::calculate_checksum(message::m_sentence);
 
-    return stream.str();
+    // Return the comparison.
+    return (actual.compare(calculated) == 0);
 }
 
 // PROPERTIES
-message::talker message::p_talker() const
+std::string message::p_talker() const
 {
-    return message::m_talker;
+    // Find index of either first , or last *
+    unsigned long end_position;
+    if((end_position = message::m_sentence.find_first_of(',')) == std::string::npos)
+    {
+        end_position = message::m_sentence.find_last_of('*');
+    }
+
+    // Calculate talker field length:
+    unsigned long field_length = end_position - 4;
+
+    // Return talker substring.
+    return message::m_sentence.substr(1, field_length);
 }
-message::id message::p_id() const
+std::string message::p_type() const
 {
-    return message::m_id;
+    // Find index of either first , or last *
+    unsigned long end_position;
+    if((end_position = message::m_sentence.find_first_of(',')) == std::string::npos)
+    {
+        end_position = message::m_sentence.find_last_of('*');
+    }
+
+    // Calculate start position.
+    unsigned long start_position = end_position - 3;
+
+    // Return talker substring.
+    return message::m_sentence.substr(start_position, 3);
+}
+std::vector<std::string> message::p_data() const
+{
+    // Create output vector.
+    std::vector<std::string> output;
+
+    // Search for all commas.
+    unsigned long position = 0;
+    while((position = message::m_sentence.find(',', position)) != std::string::npos)
+    {
+        // Comma found.
+
+        // First increment position to point to first character in this field
+        position++;
+
+        // Find end of this field, which is marked by , or *
+        unsigned long end_position;
+        if((end_position = message::m_sentence.find_first_of(',', position)) == std::string::npos)
+        {
+            end_position = message::m_sentence.find_last_of('*');
+        }
+
+        // Calculate field length.
+        unsigned long field_length = end_position - position;
+
+        // Add substring to output.
+        output.push_back(message::m_sentence.substr(position, field_length));
+    }
+
+    // Return output vector.
+    return output;
+}
+std::string message::p_nmea_sentence() const
+{
+    return message::m_sentence;
 }
