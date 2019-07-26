@@ -155,29 +155,51 @@ void driver::handle_gp(const message *msg)
         std::vector<std::string> fields = msg->p_data();
 
         // Lat Field (idx 1): ddmm.mmmm
-        // Read degrees portion of field.
-        driver::m_current_data.latitude = std::stod(fields.at(1).substr(0, 2));
-        // Read minutes and add to degrees.
-        driver::m_current_data.latitude += std::stod(fields.at(1).substr(2)) / 60.0;
-        // Read N/S field (idx 2) and modify latitude as needed.
-        if(fields.at(2).compare("S") == 0)
+        if(fields.at(1).empty() == false)
         {
-            driver::m_current_data.latitude *= -1.0;
+            // Read degrees portion of field.
+            driver::m_current_data.latitude = std::stod(fields.at(1).substr(0, 2));
+            // Read minutes and add to degrees.
+            driver::m_current_data.latitude += std::stod(fields.at(1).substr(2)) / 60.0;
+            // Read N/S field (idx 2) and modify latitude as needed.
+            if(fields.at(2).compare("S") == 0)
+            {
+                driver::m_current_data.latitude *= -1.0;
+            }
+        }
+        else
+        {
+            driver::m_current_data.latitude = std::numeric_limits<double>::quiet_NaN();
         }
 
+
         // Long Field (idx 3): dddmm.mmmm
-        // Read degrees portion of field.
-        driver::m_current_data.longitude = std::stod(fields.at(3).substr(0, 3));
-        // Read minutes and add to degrees.
-        driver::m_current_data.longitude += std::stod(fields.at(3).substr(3)) / 60.0;
-        // Read N/S field (idx 4) and modify latitude as needed.
-        if(fields.at(4).compare("W") == 0)
+        if(fields.at(3).empty() == false)
         {
-            driver::m_current_data.longitude *= -1.0;
+            // Read degrees portion of field.
+            driver::m_current_data.longitude = std::stod(fields.at(3).substr(0, 3));
+            // Read minutes and add to degrees.
+            driver::m_current_data.longitude += std::stod(fields.at(3).substr(3)) / 60.0;
+            // Read N/S field (idx 4) and modify latitude as needed.
+            if(fields.at(4).compare("W") == 0)
+            {
+                driver::m_current_data.longitude *= -1.0;
+            }
+        }
+        else
+        {
+            driver::m_current_data.longitude = std::numeric_limits<double>::quiet_NaN();
         }
 
         // Alt Field (idx 8)
-        driver::m_current_data.altitude = std::stod(fields.at(8));
+        if(fields.at(8).empty() == false)
+        {
+            driver::m_current_data.altitude = std::stod(fields.at(8));
+        }
+        else
+        {
+            driver::m_current_data.altitude = std::numeric_limits<double>::quiet_NaN();
+        }
 
         // Set GGA ready in flag.
         driver::m_data_ready |= 0x01;
@@ -191,10 +213,24 @@ void driver::handle_gp(const message *msg)
         driver::m_current_data.fix = static_cast<driver::data::fix_type>(std::stoi(fields.at(1)));
 
         // HDOP Field (idx 15)
-        driver::m_current_data.hdop = std::stod(fields.at(15));
+        if(fields.at(15).empty() == false)
+        {
+            driver::m_current_data.hdop = std::stod(fields.at(15));
+        }
+        else
+        {
+            driver::m_current_data.hdop = std::numeric_limits<double>::quiet_NaN();
+        }
 
         // VDOP Field (idx 16)
-        driver::m_current_data.vdop = std::stod(fields.at(16));
+        if(fields.at(16).empty() == false)
+        {
+            driver::m_current_data.vdop = std::stod(fields.at(16));
+        }
+        else
+        {
+            driver::m_current_data.vdop = std::numeric_limits<double>::quiet_NaN();
+        }
 
         // Set GSA ready in flag.
         driver::m_data_ready |= 0x02;
