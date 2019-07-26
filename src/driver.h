@@ -75,20 +75,17 @@ public:
     ///
     /// \brief set_baud Command for updating the baud rate that the MTK3339 operates on.
     /// \param baud_rate The new baud rate.
-    /// \return TRUE if the command was successful, otherwise false.
     ///
-    bool set_baud(unsigned int baud_rate);
+    void set_baud(unsigned int baud_rate);
     ///
     /// \brief set_nmea_update_rate Command for updating the NMEA fix update rate.
     /// \param milliseconds The number of milliseconds between updates.
-    /// \return TRUE if the command was successful, otherwise false.
     ///
-    bool set_nmea_update_rate(unsigned int milliseconds);
+    void set_nmea_update_rate(unsigned int milliseconds);
     ///
     /// \brief set_nmea_output Command for setting the NMEA outputs to GGA, GSA, RMC.
-    /// \return TRUE if the command was successful, otherwise false.
     ///
-    bool set_nmea_output();
+    void set_nmea_output();
     ///
     /// \brief attach_data_callback Attaches a callback for handling new GPS data.
     /// \param callback The callback function to call when new GPS data is available.
@@ -122,9 +119,8 @@ private:
     ///
     /// \brief send_message Sends a PMTK message to the GPS.
     /// \param msg The PMTK message to send.
-    /// \return TRUE if the command was acknowledged by the MTK3339, otherwise FALSE.
     ///
-    bool send_message(message msg);
+    void send_message(message msg);
     ///
     /// \brief read_message Reads the next NMEA sentence from the serial buffer.
     /// \return Returns a valid pointer to a read message if available. Returns NULL if the read timed out.

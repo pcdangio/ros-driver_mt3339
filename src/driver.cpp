@@ -21,23 +21,23 @@ driver::~driver()
 }
 
 // CONFIGURATION
-bool driver::set_baud(unsigned int baud_rate)
+void driver::set_baud(unsigned int baud_rate)
 {
     std::vector<std::string> fields;
     fields.push_back(std::to_string(baud_rate));
     message msg("PMTK", "251", fields);
 
-    return driver::send_message(msg);
+    driver::send_message(msg);
 }
-bool driver::set_nmea_update_rate(unsigned int milliseconds)
+void driver::set_nmea_update_rate(unsigned int milliseconds)
 {
     std::vector<std::string> fields;
     fields.push_back(std::to_string(milliseconds));
     message msg("PMTK", "220", fields);
 
-    return driver::send_message(msg);
+    driver::send_message(msg);
 }
-bool driver::set_nmea_output()
+void driver::set_nmea_output()
 {
     std::vector<std::string> fields;
     fields.push_back("0");  // GLL
@@ -61,11 +61,11 @@ bool driver::set_nmea_output()
     fields.push_back("0");  // CHN
     message msg("PMTK", "314", fields);
 
-    return driver::send_message(msg);
+    driver::send_message(msg);
 }
 
 // IO METHODS
-bool driver::send_message(message msg)
+void driver::send_message(message msg)
 {
     // Write the message to the MT3339
     driver::m_port->write(msg.p_nmea_sentence());
@@ -102,34 +102,30 @@ bool driver::send_message(message msg)
                         std::stringstream error;
                         error << "ACK: Invalid command/packet: " << msg.p_nmea_sentence();
                         throw std::runtime_error(error.str());
-                        break;
                     }
                     case 1:
                     {
                         std::stringstream error;
                         error << "ACK: Unsupported command/packet type: " << msg.p_nmea_sentence();
                         throw std::runtime_error(error.str());
-                        break;
                     }
                     case 2:
                     {
                         std::stringstream error;
                         error << "ACK: Valid command/packet, but action failed: " << msg.p_nmea_sentence();
                         throw std::runtime_error(error.str());
-                        break;
                     }
                     case 3:
                     {
                         // ACK
                         delete response;
-                        return true;
+                        return;
                     }
                     default:
                     {
                         std::stringstream error;
                         error << "ACK: Unknown error: " << msg.p_nmea_sentence();
                         throw std::runtime_error(error.str());
-                        break;
                     }
                     }
                 }
@@ -149,11 +145,11 @@ bool driver::send_message(message msg)
         long elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_time).count();
         if(elapsed > 100)
         {
-            break;
+            std::stringstream error;
+            error << "ACK: No ACK message received: " << msg.p_nmea_sentence();
+            throw std::runtime_error(error.str());
         }
     }
-
-    return false;
 }
 message* driver::read_message()
 {
