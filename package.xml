@@ -3,7 +3,7 @@
 
   <name>driver_mt3339</name>
   <version>1.0.0</version>
-  <description>A ROS driver for the MTK3339 GPS sensor.</description>
+  <description>A ROS driver for the MT3339 GPS sensor.</description>
   <license>MIT</license>
 
   <author email="pcdangio@gmail.com">Paul D'Angio</author>
