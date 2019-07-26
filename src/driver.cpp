@@ -125,7 +125,11 @@ message* driver::read_message()
 {
     // Read the next line NMEA sentence.
     std::string buffer;
-    driver::m_port->readline(buffer, 200, "\r\n");
+    unsigned long bytes_read = driver::m_port->readline(buffer, 200, "\r\n");
+    if(bytes_read == 0)
+    {
+        return nullptr;
+    }
 
     // Convert string into message.
     message* output = new message(buffer);
