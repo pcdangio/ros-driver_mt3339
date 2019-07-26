@@ -15,6 +15,7 @@ SOURCES += \
 DISTFILES += \
     CMakeLists.txt \
     LICENSE \
+    README.md \
     package.xml
 
 HEADERS += \
