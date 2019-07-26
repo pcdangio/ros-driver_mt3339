@@ -8,7 +8,7 @@ driver::driver(std::string port, unsigned int baud_rate)
 {
     // Open the serial port.
     // Use interbyte timeout since partial NMEA strings can be sent.
-    driver::m_port = new serial::Serial(port, baud_rate, serial::Timeout(10));
+    driver::m_port = new serial::Serial(port, baud_rate, serial::Timeout(10, 100));
 
     // Initialize data ready flag.
     driver::m_data_ready = 0;
