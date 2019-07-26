@@ -2,6 +2,7 @@
 
 #include <ctime>
 #include <chrono>
+#include <stdexcept>
 
 // CONSTRUCTORS
 driver::driver(std::string port, unsigned int baud_rate)
@@ -93,10 +94,43 @@ bool driver::send_message(message msg)
                 if(fields.at(0).compare(msg.p_type()) == 0)
                 {
                     // Check the ack type.
-                    if(fields.at(1).compare("3") == 0)
+                    int ack_type = std::stoi(fields.at(1));
+                    switch(ack_type)
                     {
+                    case 0:
+                    {
+                        std::stringstream error;
+                        error << "ACK: Invalid command/packet: " << msg.p_nmea_sentence();
+                        throw std::runtime_error(error.str());
+                        break;
+                    }
+                    case 1:
+                    {
+                        std::stringstream error;
+                        error << "ACK: Unsupported command/packet type: " << msg.p_nmea_sentence();
+                        throw std::runtime_error(error.str());
+                        break;
+                    }
+                    case 2:
+                    {
+                        std::stringstream error;
+                        error << "ACK: Valid command/packet, but action failed: " << msg.p_nmea_sentence();
+                        throw std::runtime_error(error.str());
+                        break;
+                    }
+                    case 3:
+                    {
+                        // ACK
                         delete response;
                         return true;
+                    }
+                    default:
+                    {
+                        std::stringstream error;
+                        error << "ACK: Unknown error: " << msg.p_nmea_sentence();
+                        throw std::runtime_error(error.str());
+                        break;
+                    }
                     }
                 }
             }
