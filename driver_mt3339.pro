@@ -8,7 +8,9 @@ INCLUDEPATH += \
 
 SOURCES += \
     src/driver.cpp \
-    src/message.cpp
+    src/main.cpp \
+    src/message.cpp \
+    src/ros_node.cpp
 
 DISTFILES += \
     CMakeLists.txt \
@@ -17,4 +19,5 @@ DISTFILES += \
 
 HEADERS += \
     src/driver.h \
-    src/message.h
+    src/message.h \
+    src/ros_node.h
