@@ -15,6 +15,7 @@ driver::driver(std::string port, unsigned int baud_rate)
 }
 driver::~driver()
 {
+    driver::m_port->close();
     delete driver::m_port;
 }
 
