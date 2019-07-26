@@ -249,7 +249,7 @@ void driver::handle_gp(const message *msg)
         time_struct.tm_mday = std::stoi(fields.at(8).substr(0,2));
         time_struct.tm_mon = std::stoi(fields.at(8).substr(2,2)) - 1;
         time_struct.tm_year = std::stoi(fields.at(8).substr(4, 2)) + 100;
-        driver::m_current_data.utc_time = static_cast<double>(std::mktime(&time_struct));
+        driver::m_current_data.utc_time = static_cast<double>(timegm(&time_struct));
 
         // Parse and add in seconds.
         driver::m_current_data.utc_time += std::stod(fields.at(0).substr(4));
