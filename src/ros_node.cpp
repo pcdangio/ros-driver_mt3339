@@ -128,12 +128,15 @@ void ros_node::data_callback(driver::data data)
         nav_message.altitude = std::numeric_limits<double>::quiet_NaN();
         // Set covariance matrix.
         nav_message.position_covariance_type = sensor_msgs::NavSatFix::COVARIANCE_TYPE_APPROXIMATED;
-        // Calculate cov_xy = (uere*hdop)^2 / 2, cov_z = (uere*vdop)^2
-        double cov_xy = std::pow(ros_node::m_uere * static_cast<double>(data.hdop), 2.0) / 2.0;
-        double cov_z = std::pow(ros_node::m_uere * static_cast<double>(data.vdop), 2.0);
-        nav_message.position_covariance = {cov_xy, 0.0, 0.0,
-                                           0.0, cov_xy, 0.0,
-                                           0.0, 0.0, cov_z};
+        // From wikipedia: https://en.wikipedia.org/wiki/Error_analysis_for_the_Global_Positioning_System
+        // 3*sigma_r = UERE
+        // sigma_rc = sqrt(DOP^2 * sigma_r^2  + sigma_numerical^2)
+        // Calculate cov_h = HDOP^2 * (UERE/3)^2 + 1^2, cov_v = VDOP^2 * (UERE/3)^2 + 1^2
+        double cov_h = std::pow(static_cast<double>(data.hdop), 2.0) * std::pow((ros_node::m_uere / 3.0), 2.0) + 1.0;
+        double cov_v = std::pow(static_cast<double>(data.vdop), 2.0) * std::pow((ros_node::m_uere / 3.0), 2.0) + 1.0;
+        nav_message.position_covariance = {cov_h, 0.0, 0.0,
+                                           0.0, cov_h, 0.0,
+                                           0.0, 0.0, cov_v};
     }
     if(data.fix == driver::data::fix_type::FIX_3D)
     {
