@@ -3,7 +3,7 @@
 #ifndef DRIVER_H
 #define DRIVER_H
 
-#include "message.h"
+#include "nmea_sentence.h"
 #include "nmea_gga.h"
 #include "nmea_gsa.h"
 #include "nmea_rmc.h"
@@ -56,15 +56,15 @@ public:
     bool set_nmea_output(ack_t* ack = nullptr);
 
     // CALLBACKS
-    /// \brief Attaches a callback for handling GGA messages.
+    /// \brief Attaches a callback for handling GGA sentences.
     /// \param callback The callback function to attach.
     /// \note set_nmea_output should be called after callbacks are attached.
     void attach_callback_gga(std::function<void(std::shared_ptr<nmea::gga>)> callback);
-    /// \brief Attaches a callback for handling GSA messages.
+    /// \brief Attaches a callback for handling GSA sentences.
     /// \param callback The callback function to attach.
     /// \note set_nmea_output should be called after callbacks are attached.
     void attach_callback_gsa(std::function<void(std::shared_ptr<nmea::gsa>)> callback);
-    /// \brief Attaches a callback for handling RMC messages.
+    /// \brief Attaches a callback for handling RMC sentences.
     /// \param callback The callback function to attach.
     /// \note set_nmea_output should be called after callbacks are attached.
     void attach_callback_rmc(std::function<void(std::shared_ptr<nmea::rmc>)> callback);
@@ -82,41 +82,41 @@ private:
     void read_thread();
 
     // CALLBACKS
-    /// \brief Stores the callback for GGA messages.
+    /// \brief Stores the callback for GGA sentences.
     std::function<void(std::shared_ptr<nmea::gga>)> m_callback_gga;
-    /// \brief Stores the callback for GSA messages.
+    /// \brief Stores the callback for GSA sentences.
     std::function<void(std::shared_ptr<nmea::gsa>)> m_callback_gsa;
-    /// \brief Stores the callback for RMC messages.
+    /// \brief Stores the callback for RMC sentences.
     std::function<void(std::shared_ptr<nmea::rmc>)> m_callback_rmc;
 
     // METHODS
-    /// \brief Sends a PMTK message to the MT3339.
-    /// \param msg The PMTK message to send.
-    void send_message(const message& msg);
+    /// \brief Sends a PMTK sentence to the MT3339.
+    /// \param sentence The PMTK sentence to send.
+    void send_sentence(const nmea::sentence& sentence);
 
     // HANDLERS
-    /// \brief Handles an ACK message.
-    /// \param msg The message to handle.
-    void handle_ack(const message& msg);
-    /// \brief Handles a TXT message.
-    /// \param msg The message to handle.
-    void handle_txt(const message& msg);
-    /// \brief Handles a GGA message.
-    /// \param msg The message to handle.
-    void handle_gga(const message& msg);
-    /// \brief Handles a GSA message.
-    /// \param msg The message to handle.
-    void handle_gsa(const message& msg);
-    /// \brief Handles an RMC message.
-    /// \param msg The message to handle.
-    void handle_rmc(const message& msg);
+    /// \brief Handles an ACK sentence.
+    /// \param sentence The sentence to handle.
+    void handle_ack(const nmea::sentence& sentence);
+    /// \brief Handles a TXT sentence.
+    /// \param sentence The sentence to handle.
+    void handle_txt(const nmea::sentence& sentence);
+    /// \brief Handles a GGA sentence.
+    /// \param sentence The sentence to handle.
+    void handle_gga(const nmea::sentence& sentence);
+    /// \brief Handles a GSA sentence.
+    /// \param sentence The sentence to handle.
+    void handle_gsa(const nmea::sentence& sentence);
+    /// \brief Handles an RMC sentence.
+    /// \param sentence The sentence to handle.
+    void handle_rmc(const nmea::sentence& sentence);
 
     // LAST ACK
-    /// \brief Retrieves an ACK message from the MT3339.
-    /// \param ack The ack_t to store the retrieved ACK message in.
-    /// \return TRUE if an ACK message was retrieved, otherwise FALSE.
+    /// \brief Retrieves an ACK sentence from the MT3339.
+    /// \param ack The ack_t to store the retrieved ACK sentence in.
+    /// \return TRUE if an ACK sentence was retrieved, otherwise FALSE.
     bool get_ack(const std::string& command, ack_t* ack);
-    /// \brief Records the last ACK message received from the MT3339.
+    /// \brief Records the last ACK sentence received from the MT3339.
     struct last_ack_t
     {
         /// \brief Indicates if this instance is set/new.
@@ -126,15 +126,15 @@ private:
         /// \brief The value of the acknowledge.
         ack_t ack;
     };
-    /// \brief Stores the last received ACK message.
+    /// \brief Stores the last received ACK sentence.
     last_ack_t m_last_ack;
     /// \brief Thread safety for m_last_ack.
     std::mutex m_mutex_ack;
 
     // LAST TXT
-    /// \brief Retrieves a TXT message from the MT3339.
+    /// \brief Retrieves a TXT sentence from the MT3339.
     /// \param text The string to store the retrieved text in.
-    /// \returns TRUE if a TXT message was retrieved, otherwise FALSE.
+    /// \returns TRUE if a TXT sentence was retrieved, otherwise FALSE.
     bool get_txt(std::string& text);
     /// \brief Records the last TXT messsage received from the MT3339.
     struct last_txt_t
@@ -142,7 +142,7 @@ private:
         bool is_set;
         std::string text;
     };
-    /// \brief Stores the last received TXT message.
+    /// \brief Stores the last received TXT sentence.
     last_txt_t m_last_txt;
     /// \brief Threat safety for m_last_txt.
     std::mutex m_mutex_txt;
