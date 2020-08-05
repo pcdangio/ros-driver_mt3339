@@ -39,9 +39,9 @@ public:
     ~driver();
 
     // COMMANDS
-    /// \brief Restarts the MT3339 and validates an active connection.
-    /// \return TRUE if the connection is validated, otherwise false.
-    bool restart();
+    /// \brief Tests for a functional connection with the MT3339.
+    /// \return TRUE if the connection is validated, otherwise FALSE.
+    bool test_connection();
     /// \brief Updates the baud rate that the MT3339 operates on.
     /// \param baud_rate The new baud rate.
     void set_baud(uint32_t baud_rate);
@@ -75,8 +75,15 @@ private:
     /// \note Has internal mutexes for read and write so is thread safe.
     serial::Serial* m_port;
 
+    // FLAGS
+    /// \brief Indicates if the MT3339 responded to a FW version request.
+    std::atomic<bool> f_connection_ok;
+
     /// \brief The serial port's read thread.
     boost::thread m_thread;
+    /// \brief Indicates if the read thread is running.
+    std::atomic<bool> f_is_reading;
+    /// \brief Indicates if a stop has been requested for the read thread.
     std::atomic<bool> f_stop_requested;
     /// \brief The read thread worker.
     void read_thread();
@@ -98,9 +105,9 @@ private:
     /// \brief Handles an ACK sentence.
     /// \param sentence The sentence to handle.
     void handle_ack(const nmea::sentence& sentence);
-    /// \brief Handles a TXT sentence.
+    /// \brief Handles a 705 sentence.
     /// \param sentence The sentence to handle.
-    void handle_txt(const nmea::sentence& sentence);
+    void handle_705(const nmea::sentence& sentence);
     /// \brief Handles a GGA sentence.
     /// \param sentence The sentence to handle.
     void handle_gga(const nmea::sentence& sentence);
@@ -130,22 +137,6 @@ private:
     last_ack_t m_last_ack;
     /// \brief Thread safety for m_last_ack.
     std::mutex m_mutex_ack;
-
-    // LAST TXT
-    /// \brief Retrieves a TXT sentence from the MT3339.
-    /// \param text The string to store the retrieved text in.
-    /// \returns TRUE if a TXT sentence was retrieved, otherwise FALSE.
-    bool get_txt(std::string& text);
-    /// \brief Records the last TXT messsage received from the MT3339.
-    struct last_txt_t
-    {
-        bool is_set;
-        std::string text;
-    };
-    /// \brief Stores the last received TXT sentence.
-    last_txt_t m_last_txt;
-    /// \brief Threat safety for m_last_txt.
-    std::mutex m_mutex_txt;
 };
 
 #endif // DRIVER_H

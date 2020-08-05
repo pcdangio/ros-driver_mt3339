@@ -6,18 +6,24 @@
 
 // CONSTRUCTORS
 driver::driver(std::string port, unsigned int baud_rate)
-{
+{    
     // Initialize PMTK response trackers.
     driver::m_last_ack.is_set = false;
-    driver::m_last_txt.is_set = false;
 
     // Open the serial port.
     // Use interbyte timeout since partial NMEA strings can be sent.
     driver::m_port = new serial::Serial(port, baud_rate, serial::Timeout(10, 100, 0, 100, 0));
 
     // Start the read thread.
-    driver:f_stop_requested = false;
+    driver::f_is_reading = false;
+    driver::f_stop_requested = false;
     driver::m_thread = boost::thread(&driver::read_thread, this);
+
+    // Wait for thread to start.
+    while(!driver::f_is_reading)
+    {
+        usleep(100);
+    }
 }
 driver::~driver()
 {
@@ -31,24 +37,33 @@ driver::~driver()
 }
 
 // CONFIGURATION
-bool driver::restart()
+bool driver::test_connection()
 {
-    // Create a hot restart message.
-    nmea::sentence sentence("PMTK", "101");
+    // Clear test flag.
+    driver::f_connection_ok = false;
+
+    // Create a FW version query sentence.
+    nmea::sentence sentence("PMTK", "605");
 
     // Send the sentence.
     driver::send_sentence(sentence);
 
-    // Retrieve the startup TXT sentence and check if it matches.
-    std::string retrieved_text;
-    if(driver::get_txt(retrieved_text) && retrieved_text == "MTKGPS")
+    // Wait for response from MT3339.
+    std::chrono::duration<int32_t, std::milli> timeout(250);
+    auto start_time = std::chrono::steady_clock::now();
+    while((std::chrono::steady_clock::now() - start_time) <= timeout)
     {
-        return true;
+        if(driver::f_connection_ok)
+        {
+            return true;
+        }
+        else
+        {
+            usleep(10000);
+        }   
     }
 
-    // If this point reached, either:
-    // - No TXT sentence was sent by the MT3339
-    // - The last TXT sentence does not match what was sent.
+    // If this point reached, the startup SYS sentence was never receieved.
     return false;
 }
 void driver::set_baud(uint32_t baud_rate)
@@ -125,12 +140,18 @@ void driver::attach_callback_rmc(std::function<void(std::shared_ptr<nmea::rmc>)>
 void driver::send_sentence(const nmea::sentence& sentence)
 {
     // Write the sentence to the MT3339
-    driver::m_port->write(sentence.p_nmea_sentence());
+    driver::m_port->write(sentence.nmea_sentence());
 }
 
 // READ
 void driver::read_thread()
 {
+    driver::m_port->flushInput();
+
+    // Set running flag.
+    driver::f_is_reading = true;
+
+    // Loop until stopped.
     while(!driver::f_stop_requested)
     {
         // Read the next line NMEA sentence.
@@ -160,9 +181,9 @@ void driver::read_thread()
             {
                 driver::handle_ack(sentence);
             }
-            else if(type == "011")
+            else if(type == "705")
             {
-                driver::handle_txt(sentence);
+                driver::handle_705(sentence);
             }
         }
         else if(talker == "GP")
@@ -181,6 +202,9 @@ void driver::read_thread()
             }
         }
     }
+
+    // Indicate that thread is no longer running.
+    driver::f_is_reading = false;
 }
 
 // HANDLERS
@@ -197,17 +221,10 @@ void driver::handle_ack(const nmea::sentence& sentence)
     // Unlock the mutex.
     driver::m_mutex_ack.unlock();
 }
-void driver::handle_txt(const nmea::sentence& sentence)
+void driver::handle_705(const nmea::sentence& sentence)
 {
-    // Lock TXT mutex.
-    driver::m_mutex_txt.lock();
-
-    // Set last txt.
-    driver::m_last_txt.is_set = true;
-    driver::m_last_txt.text = sentence.get_field(0);
-
-    // Unlock mutex.
-    driver::m_mutex_txt.unlock();
+    // This message is used to test connectivity with the MT3339.
+    driver::f_connection_ok = true;
 }
 void driver::handle_gga(const nmea::sentence& sentence)
 {
@@ -503,7 +520,7 @@ bool driver::get_ack(const std::string& command, ack_t* ack)
     bool retrieved = false;
 
     // Loop until retrieved or timeout of 100ms.
-    std::chrono::duration<int32_t, std::milli> timeout(100);
+    std::chrono::duration<int32_t, std::milli> timeout(250);
     auto start_time = std::chrono::steady_clock::now();
     while(!retrieved && (std::chrono::steady_clock::now() - start_time) <= timeout)
     {
@@ -533,40 +550,6 @@ bool driver::get_ack(const std::string& command, ack_t* ack)
         if(!retrieved)
         {
             usleep(5000);
-        }        
-    }    
-
-    return retrieved;
-}
-bool driver::get_txt(std::string& text)
-{
-    // Set up output.
-    bool retrieved = false;
-
-    // Loop until retrieved or timeout of 100ms.
-    std::chrono::duration<int32_t, std::milli> timeout(1000);
-    auto start_time = std::chrono::steady_clock::now();
-    while(!retrieved && (std::chrono::steady_clock::now() - start_time) <= timeout)
-    {
-        // Lock mutex.
-        driver::m_mutex_txt.lock();
-
-        // Check if last_ack is set.
-        if(driver::m_last_txt.is_set)
-        {
-            // Retrieve the text.
-            text = driver::m_last_txt.text;
-            driver::m_last_txt.is_set = false;
-            retrieved = true;
-        }
-
-        // Unlock the mutex.
-        driver::m_mutex_txt.unlock();
-
-        // Sleep if still waiting.
-        if(!retrieved)
-        {
-            usleep(10000);
         }        
     }    
 
