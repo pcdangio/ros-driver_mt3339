@@ -52,7 +52,7 @@ bool driver::test_connection()
     // - The last TXT sentence does not match what was sent.
     return false;
 }
-void driver::set_baud(unsigned int baud_rate)
+void driver::set_baud(uint32_t baud_rate)
 {
     // Build sentence to send.
     nmea::sentence sentence("PMTK", "251", 1);
@@ -63,8 +63,11 @@ void driver::set_baud(unsigned int baud_rate)
 
     // Do not try and receive an ACK as the baud rate is changed.
 }
-bool driver::set_nmea_update_rate(unsigned int milliseconds, ack_t* ack)
+bool driver::set_nmea_update_rate(uint32_t milliseconds, ack_t* ack)
 {
+    // Truncate the rate to the allowable range.
+    milliseconds = std::min(10000U, std::max(0U, milliseconds));
+    
     // Build the sentence.
     nmea::sentence sentence("PMTK", "220", 1);
     sentence.set_field(0, std::to_string(milliseconds));
@@ -103,6 +106,20 @@ bool driver::set_nmea_output(ack_t* ack)
     
     // Retrieve the ack.
     return driver::get_ack("314", ack);
+}
+
+// CALLBACKS
+void driver::attach_callback_gga(std::function<void(std::shared_ptr<nmea::gga>)> callback)
+{
+    driver::m_callback_gga = callback;
+}
+void driver::attach_callback_gsa(std::function<void(std::shared_ptr<nmea::gsa>)> callback)
+{
+    driver::m_callback_gsa = callback;
+}
+void driver::attach_callback_rmc(std::function<void(std::shared_ptr<nmea::rmc>)> callback)
+{
+    driver::m_callback_rmc = callback;
 }
 
 // IO METHODS
@@ -480,14 +497,14 @@ void driver::handle_rmc(const nmea::sentence& sentence)
     }
 }
 
-// LAST sentence
+// LAST SENTENCES
 bool driver::get_ack(const std::string& command, ack_t* ack)
 {
     // Set up output.
     bool retrieved = false;
 
     // Loop until retrieved or timeout of 100ms.
-    std::chrono::duration<int32_t, std::chrono::milliseconds> timeout(100);
+    std::chrono::duration<int32_t, std::milli> timeout(100);
     auto start_time = std::chrono::steady_clock::now();
     while(!retrieved && (std::chrono::steady_clock::now() - start_time) <= timeout)
     {
@@ -528,7 +545,7 @@ bool driver::get_txt(std::string& text)
     bool retrieved = false;
 
     // Loop until retrieved or timeout of 100ms.
-    std::chrono::duration<int32_t, std::chrono::milliseconds> timeout(100);
+    std::chrono::duration<int32_t, std::milli> timeout(1000);
     auto start_time = std::chrono::steady_clock::now();
     while(!retrieved && (std::chrono::steady_clock::now() - start_time) <= timeout)
     {

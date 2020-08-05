@@ -35,7 +35,7 @@ public:
     /// \brief Instantiates a new driver and opens communications with the MT3339.
     /// \param port The serial port connected to the MT3339.
     /// \param baud_rate The baud rate to communicate with the MT3339 over.
-    driver(std::string port, unsigned int baud_rate);
+    driver(std::string port, uint32_t baud_rate);
     ~driver();
 
     // COMMANDS
@@ -44,12 +44,12 @@ public:
     bool test_connection();
     /// \brief Updates the baud rate that the MT3339 operates on.
     /// \param baud_rate The new baud rate.
-    void set_baud(unsigned int baud_rate);
+    void set_baud(uint32_t baud_rate);
     /// \brief Sets the NMEA fix update rate.
     /// \param milliseconds The number of milliseconds between updates.
     /// \param ack OPTIONAL Passback of ACK from receiver.
     /// \return TRUE if succeeded, otherwise FALSE.
-    bool set_nmea_update_rate(unsigned int milliseconds, ack_t* ack = nullptr);
+    bool set_nmea_update_rate(uint32_t milliseconds, ack_t* ack = nullptr);
     /// \brief Sets the NMEA outputs to match attached callbacks.
     /// \param ack OPTIONAL Passback of ACK from receiver.
     /// \return TRUE if succeeded, otherwise FALSE.
