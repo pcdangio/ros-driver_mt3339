@@ -23,8 +23,9 @@ sentence::sentence(const std::string& nmea_sentence)
 
     // Parse the talker and type.
     std::getline(parser, part, ',');
-    sentence::m_talker = part.substr(1,2);
-    sentence::m_type = part.substr(3);
+    // Assume talker length is variable and type length is 3.
+    sentence::m_talker = part.substr(1, part.length() - 4);
+    sentence::m_type = part.substr(part.length() - 3);
 
     // Parse the fields.
     while(std::getline(parser, part, ','))
@@ -126,8 +127,8 @@ std::string sentence::p_nmea_sentence() const
 
     // Set header, talker, and sentence type.
     stream << '$'
-           << talker
-           << type;
+           << sentence::m_talker
+           << sentence::m_type;
     // Add in data fields.
     for(auto field = sentence::m_fields.cbegin(); field != sentence::m_fields.cend(); ++ field)
     {
