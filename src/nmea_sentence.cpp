@@ -17,8 +17,18 @@ sentence::sentence(const std::string& talker, const std::string& type, uint32_t 
 }
 sentence::sentence(const std::string& nmea_sentence)
 {
+    // Strip out the checksum if it has one.
+    std::stringstream parser;
+    if(nmea_sentence.at(nmea_sentence.length() - 5) == '*')
+    {
+        parser << nmea_sentence.substr(0, nmea_sentence.length() - 5);
+    }
+    else
+    {
+        parser << nmea_sentence;
+    }
+    
     // Create a stringstream for parsing.
-    std::stringstream parser(nmea_sentence);
     std::string part;
 
     // Parse the talker and type.
@@ -32,9 +42,6 @@ sentence::sentence(const std::string& nmea_sentence)
     {
         sentence::m_fields.push_back(part);
     }
-
-    // Remove the last field as it contains the checksum.
-    sentence::m_fields.pop_back();
 }
 
 // METHODS
