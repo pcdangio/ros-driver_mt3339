@@ -6,5 +6,5 @@ int main(int argc, char **argv)
     ros_node node(argc, argv);
 
     // Run the node.
-    node.spin();
+    node.run();
 }
