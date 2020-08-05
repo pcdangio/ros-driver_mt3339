@@ -75,8 +75,10 @@ bool ros_node::driver_connect(std::string port, uint32_t baud)
             ROS_ERROR_STREAM("error opening port " << port << " (" << e.what() << ")");
             return false;
         }
-        // Attempt to restart the module and validate the connection.
-        if(ros_node::m_driver->restart())
+        // Give serial connection time to settle before testing connection.
+        usleep(250000);
+        // Test the connection.
+        if(ros_node::m_driver->test_connection())
         {
             // Connection worked.
             ROS_INFO("successfully connected to MT3339");
