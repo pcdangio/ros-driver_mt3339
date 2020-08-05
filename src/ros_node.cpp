@@ -27,7 +27,7 @@ ros_node::ros_node(int argc, char **argv)
     ros_node::m_time_publisher = public_node.advertise<sensor_msgs::TimeReference>("gps/time", 1);
 
     // Connect the driver to the MT3339.
-    if(!ros_node::driver_connect(p_port, p_baud));
+    if(!ros_node::driver_connect(p_port, p_baud))
     {
         ROS_FATAL("unable to connect to MT3339");
         exit(1);
@@ -75,8 +75,8 @@ bool ros_node::driver_connect(std::string port, uint32_t baud)
             ROS_ERROR_STREAM("error opening port " << port << " (" << e.what() << ")");
             return false;
         }
-        // Test the connection.
-        if(ros_node::m_driver->test_connection())
+        // Attempt to restart the module and validate the connection.
+        if(ros_node::m_driver->restart())
         {
             // Connection worked.
             ROS_INFO("successfully connected to MT3339");
