@@ -39,9 +39,9 @@ public:
     ~driver();
 
     // COMMANDS
-    /// \brief Tests if the serial connection with the MT3339 is valid.
-    /// \returns TRUE if the connection is valid, otherwise FALSE.
-    bool test_connection();
+    /// \brief Restarts the MT3339 and validates an active connection.
+    /// \return TRUE if the connection is validated, otherwise false.
+    bool restart();
     /// \brief Updates the baud rate that the MT3339 operates on.
     /// \param baud_rate The new baud rate.
     void set_baud(uint32_t baud_rate);

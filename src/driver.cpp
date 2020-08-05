@@ -31,18 +31,17 @@ driver::~driver()
 }
 
 // CONFIGURATION
-bool driver::test_connection()
+bool driver::restart()
 {
-    // Create a TXT sentence to send to the MT3339.
-    nmea::sentence sentence("PMTK", "011", 1);
-    sentence.set_field(0, "test_connection");
+    // Create a hot restart message.
+    nmea::sentence sentence("PMTK", "101");
 
     // Send the sentence.
     driver::send_sentence(sentence);
 
-    // Retrieve the TXT sentence and check if it matches.
+    // Retrieve the startup TXT sentence and check if it matches.
     std::string retrieved_text;
-    if(driver::get_txt(retrieved_text) && retrieved_text == "test_connection")
+    if(driver::get_txt(retrieved_text) && retrieved_text == "MTKGPS")
     {
         return true;
     }
@@ -567,7 +566,7 @@ bool driver::get_txt(std::string& text)
         // Sleep if still waiting.
         if(!retrieved)
         {
-            usleep(5000);
+            usleep(10000);
         }        
     }    
 
