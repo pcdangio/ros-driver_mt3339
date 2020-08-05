@@ -127,7 +127,7 @@ void sentence::set_field(uint32_t i, const std::string& value)
         sentence::m_fields[i] = value;
     }
 }
-std::string sentence::p_nmea_sentence() const
+std::string sentence::nmea_sentence() const
 {
     // Create stringstream for generating string.
     std::stringstream stream;

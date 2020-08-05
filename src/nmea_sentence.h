@@ -53,7 +53,7 @@ public:
     void set_field(uint32_t i, const std::string& value);
     /// \brief Gets the NMEA sentence of the sentence.
     /// \return The NMEA sentence of the sentence.
-    std::string p_nmea_sentence() const;
+    std::string nmea_sentence() const;
 
 private:
     // VARIABLES
