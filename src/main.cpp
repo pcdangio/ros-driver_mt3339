@@ -1,9 +1,9 @@
-#include "ros_node.h"
+#include "driver.h"
 
 int main(int argc, char **argv)
 {
     // Create the node.
-    ros_node node(argc, argv);
+    driver node(argc, argv);
 
     // Run the node.
     node.run();
