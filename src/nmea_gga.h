@@ -11,12 +11,12 @@ struct gga
     double utc_time_of_day;
     double latitude;
     double longitude;
-    enum class fix_quality_t
+    enum class fix_type_t
     {
-        INVALID = 0,
+        NONE = 0,
         GPS = 1,
         DGPS = 2
-    } fix_quality;
+    } fix_type;
     uint8_t satellite_count;
     double hdop;
     double altitude;

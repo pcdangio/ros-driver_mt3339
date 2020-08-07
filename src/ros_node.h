@@ -7,6 +7,11 @@
 
 #include <ros/ros.h>
 
+#include <sensor_msgs_ext/gnss_fix.h>
+#include <sensor_msgs_ext/gnss_position.h>
+#include <sensor_msgs_ext/gnss_track.h>
+#include <sensor_msgs_ext/time_reference.h>
+
 /// \brief Implements the driver's ROS node functionality.
 class ros_node
 {
@@ -23,17 +28,29 @@ public:
     void run();
 
 private:
-    // VARIABLES
+    // COMPONENTS
     /// \brief The driver instance.
     driver* m_driver;
+
+    // NODE
     /// \brief The node's handle.
     ros::NodeHandle* m_node;
-    /// \brief The node's NavSatFix message publisher.
-    ros::Publisher m_nav_publisher;
-    /// \brief The node's TimeReference message publisher.
-    ros::Publisher m_time_publisher;
+
+    // PARAMETERS
+    /// \brief Stores the frame ID of the receiver's coordinate frame.
+    std::string p_frame_id;
     /// \brief Stores the User Equivalent Range Error (UERE) for the sensor.
     double p_uere;
+
+    // PUBLISHERS
+    /// \brief Publisher for GPS fix information.
+    ros::Publisher m_publisher_gnss_fix;
+    /// \brief Publisher for GPS position information.
+    ros::Publisher m_publisher_gnss_position;
+    /// \brief Publisher for GPS track information.
+    ros::Publisher m_publisher_gnss_track;
+    /// \brief Publisher for GPS time information.
+    ros::Publisher m_publisher_time_reference;
 
     // METHODS
     /// \brief Connects the driver to the MT3339.
@@ -53,6 +70,15 @@ private:
     void callback_gsa(std::shared_ptr<nmea::gsa> gsa);
     /// \brief The callback for handling RMC sentences.
     void callback_rmc(std::shared_ptr<nmea::rmc> rmc);
+
+    // MESSAGING
+    uint8_t m_group_tracker;
+    bool f_has_fix;
+    sensor_msgs_ext::gnss_fix* m_gnss_fix;
+    sensor_msgs_ext::gnss_position* m_gnss_position;
+    sensor_msgs_ext::gnss_track* m_gnss_track;
+    sensor_msgs_ext::time_reference* m_time_reference;
+    void publish_messages();
 };
 
 #endif

@@ -1,9 +1,5 @@
 #include "ros_node.h"
 
-#include <sensor_msgs/NavSatFix.h>
-#include <sensor_msgs/NavSatStatus.h>
-#include <sensor_msgs/TimeReference.h>
-
 #include <deque>
 
 // CONSTRUCTORS
@@ -20,11 +16,17 @@ ros_node::ros_node(int argc, char **argv)
     std::string p_port = ros_node::m_node->param<std::string>("serial_port", "/dev/ttyAMA0");
     uint32_t p_baud = ros_node::m_node->param<int32_t>("baud_rate", 38400);
     uint32_t p_update_rate = ros_node::m_node->param<int32_t>("update_rate", 100);
+    ros_node::p_frame_id = ros_node::m_node->param<std::string>("frame_id", "mt3339");
     ros_node::p_uere = ros_node::m_node->param<double>("uere", 6.74);
 
+    // Initialize builders.
+    ros_node::m_group_tracker = 0;
+
     // Set up publishers.
-    ros_node::m_nav_publisher = public_node.advertise<sensor_msgs::NavSatFix>("gps/position", 1);
-    ros_node::m_time_publisher = public_node.advertise<sensor_msgs::TimeReference>("gps/time", 1);
+    ros_node::m_publisher_gnss_fix = public_node.advertise("gnss/fix", 1);
+    ros_node::m_publisher_gnss_position = public_node.advertise("gnss/position", 1);
+    ros_node::m_publisher_gnss_track = public_node.advertise("gnss/track", 1);
+    ros_node::m_publisher_time_reference = public_node.advertise("gnss/time", 1);
 
     // Connect the driver to the MT3339.
     if(!ros_node::driver_connect(p_port, p_baud))
@@ -148,15 +150,62 @@ void ros_node::run()
 // CALLBACKS
 void ros_node::callback_gga(std::shared_ptr<nmea::gga> gga)
 {
-    ROS_INFO("got gga");
+    // Clear fix and position messages.
+    delete ros_node::m_gnss_fix;
+    delete ros_node::m_gnss_position;
+    ros_node::m_gnss_fix = new sensor_msgs_ext::gnss_fix();
+    ros_node::m_gnss_position = new sensor_msgs_ext::gnss_position();
+
+    // Populate fix message components.
+    ros_node::m_gnss_fix->type = static_cast<uint8_t>(gga->fix_type);
+    ros_node::m_gnss_fix->satellite_count = gga->satellite_count;
+
+    // Store if the receiver currently has a fix.
+    ros_node::f_has_fix = gga->fix_type > nmea::gga::fix_type_t::NONE;
+
+    // Populate position message components.
+    if(ros_node::f_has_fix)
+    {
+        ros_node::m_gnss_position->frame_id = ros_node::p_frame_id;
+        ros_node::m_gnss_position->latitude = gga->latitude;
+        ros_node::m_gnss_position->longitude = gga->longitude;
+        ros_node::m_gnss_position->altitude = gga->altitude;
+    }
+
+    // GGA should be first message received in group. Reset nmea group tracker.
+    ros_node::m_group_tracker = 1; // 0b0001
 }
 void ros_node::callback_gsa(std::shared_ptr<nmea::gsa> gsa)
 {
-    ROS_INFO("got gsa");
+    // Populate fix message components.
+    ros_node::m_gnss_fix->mode_selection = static_cast<uint8_t>(gsa->mode_selection);
+    ros_node::m_gnss_fix->mode = static_cast<uint8_t>(gsa->mode);
+
+    // Populate position message components.
+    ros_node::m_gnss_position->fix_3d = gsa->mode == nmea::gsa::mode_t::_3D;
+    ros_node::m_gnss_position->has_covariance = true;
+    // From wikipedia: https://en.wikipedia.org/wiki/Error_analysis_for_the_Global_Positioning_System
+    // 3*sigma_r = UERE
+    // sigma_rc = sqrt(DOP^2 * sigma_r^2  + sigma_numerical^2)
+    // Calculate cov_h = HDOP^2 * (UERE/3)^2 + 1^2, cov_v = VDOP^2 * (UERE/3)^2 + 1^2
+    double cov_h = std::pow(static_cast<double>(gsa->hdop), 2.0) * std::pow((ros_node::p_uere / 3.0), 2.0) + 1.0;
+    double cov_v = std::pow(static_cast<double>(gsa->vdop), 2.0) * std::pow((ros_node::p_uere / 3.0), 2.0) + 1.0;
+    ros_node::m_gnss_position->covariance = {cov_h, 0.0, 0.0,
+                                             0.0, cov_h, 0.0,
+                                             0.0, 0.0, cov_v};
+
+    // Append GSA to nmea group tracker.
+    ros_node::m_group_tracker |= 2; // 0b0010
 }
 void ros_node::callback_rmc(std::shared_ptr<nmea::rmc> rmc)
 {
-    ROS_INFO("got rmc");
+    
+
+    // Append RMC to nmea group tracker.
+    ros_node::m_group_tracker |= 4; // 0b0100
+
+    // RMC is last expected message. Run publisher.
+    ros_node::publish_messages();
 }
 // void ros_node::data_callback(driver::data data)
 // {

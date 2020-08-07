@@ -270,7 +270,7 @@ void driver::handle_gga(const nmea::sentence& sentence)
         }
 
         // Parse fix quality.
-        gga->fix_quality = static_cast<nmea::gga::fix_quality_t>(std::stoi(sentence.get_field(5)));
+        gga->fix_type = static_cast<nmea::gga::fix_type_t>(std::stoi(sentence.get_field(5)));
 
         // Parse satellite count.
         if(sentence.has_field(6))
@@ -333,18 +333,18 @@ void driver::handle_gsa(const nmea::sentence& sentence)
         auto gsa = std::make_shared<nmea::gsa>();
 
         // Parse mode.
-        std::string mode_indicator = sentence.get_field(0);
-        if(mode_indicator == "A")
+        std::string mode_selection = sentence.get_field(0);
+        if(mode_selection == "A")
         {
-            gsa->mode = nmea::gsa::mode_t::AUTOMATIC;
+            gsa->mode_selection = nmea::gsa::mode_selection_t::AUTOMATIC;
         }
-        else if(mode_indicator == "M")
+        else if(mode_selection == "M")
         {
-            gsa->mode = nmea::gsa::mode_t::MANUAL;
+            gsa->mode_selection = nmea::gsa::mode_selection_t::MANUAL;
         }
 
         // Parse fix type.
-        gsa->fix_type = static_cast<nmea::gsa::fix_type_t>(std::stoi(sentence.get_field(1))-1);
+        gsa->mode = static_cast<nmea::gsa::mode_t>(std::stoi(sentence.get_field(1))-1);
 
         // Read in satellite PRNs.
         for(uint32_t i = 0; i < 12; ++i)

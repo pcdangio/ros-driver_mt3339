@@ -79,6 +79,7 @@ private:
     /// \brief Indicates if the MT3339 responded to a FW version request.
     std::atomic<bool> f_connection_ok;
 
+    // THREADING
     /// \brief The serial port's read thread.
     boost::thread m_thread;
     /// \brief Indicates if the read thread is running.
