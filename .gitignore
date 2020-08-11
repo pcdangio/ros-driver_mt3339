@@ -1,2 +1,6 @@
+# Ignore Documentation
+doc/
+
+# Ignore IDE Files
+.vscode/
 *.user
-doc/*
