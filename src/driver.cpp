@@ -12,6 +12,8 @@ driver::driver(int32_t argc, char **argv)
     driver::m_node = new ros::NodeHandle("~");    
 
     // Read parameters.
+    driver::p_connection_settle_time = driver::m_node->param<int32_t>("connection_settle_time", 300);
+    driver::p_timeout = driver::m_node->param<int32_t>("timeout", 300);
     std::string p_port = driver::m_node->param<std::string>("serial_port", "/dev/ttyAMA0");
     uint32_t p_baud = driver::m_node->param<int32_t>("baud_rate", 38400);
     uint32_t p_update_rate = driver::m_node->param<int32_t>("update_rate", 100);
@@ -99,7 +101,7 @@ bool driver::make_connection(std::string port, uint32_t desired_baud)
             return false;
         }
         // Give serial connection time to settle before testing connection.
-        usleep(250000);
+        usleep(driver::p_connection_settle_time * 1000);
         // Test the connection.
         if(driver::test_connection())
         {
@@ -188,7 +190,7 @@ bool driver::test_connection()
     driver::send_sentence(sentence);
 
     // Wait for response from MT3339.
-    std::chrono::duration<int32_t, std::milli> timeout(250);
+    std::chrono::duration<int32_t, std::milli> timeout(driver::p_timeout);
     auto start_time = std::chrono::steady_clock::now();
     while((std::chrono::steady_clock::now() - start_time) <= timeout)
     {
@@ -310,7 +312,7 @@ bool driver::set_nmea_output()
     driver::send_sentence(sentence);
     
     // Retrieve the ack.
-    std::chrono::duration<int32_t, std::milli> timeout(250);
+    std::chrono::duration<int32_t, std::milli> timeout(driver::p_timeout);
     auto start_time = std::chrono::steady_clock::now();
     while((std::chrono::steady_clock::now() - start_time) <= timeout)
     {
@@ -343,7 +345,7 @@ bool driver::set_nmea_update_rate(uint32_t milliseconds)
     driver::send_sentence(sentence);
 
     // Retrieve the ack.
-    std::chrono::duration<int32_t, std::milli> timeout(250);
+    std::chrono::duration<int32_t, std::milli> timeout(driver::p_timeout);
     auto start_time = std::chrono::steady_clock::now();
     while((std::chrono::steady_clock::now() - start_time) <= timeout)
     {

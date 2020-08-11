@@ -32,6 +32,10 @@ public:
 
 private:
     // PARAMETERS
+    /// \brief Stores the number of milliseconds to wait between making and testing a connection.
+    uint32_t p_connection_settle_time;
+    /// \brief Stores the number of milliseconds to wait for a command response.
+    uint32_t p_timeout;
     /// \brief Stores the frame ID of the receiver's coordinate frame.
     std::string p_frame_id;
     /// \brief Stores the User Equivalent Range Error (UERE) for the sensor.
