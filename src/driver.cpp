@@ -373,290 +373,187 @@ void driver::handle_705(const nmea::sentence& sentence)
 }
 void driver::handle_gga(const nmea::sentence& sentence)
 {
-    ROS_INFO("got gga");
-    // // Check if the callback is set.
-    // if(driver::m_callback_gga)
-    // {
-    //     // Create a new GGA instance.
-    //     auto gga = std::make_shared<nmea::gga>();     
+    // Clear the fix and position builders.
+    if(driver::m_builder_gnss_fix)
+    {
+        delete driver::m_builder_gnss_fix;
+    }
+    if(driver::m_builder_gnss_position)
+    {
+        delete driver::m_builder_gnss_position;
+    }
 
-    //     // Parse UTC time of day from first field.
-    //     gga->utc_time_of_day = std::stod(sentence.get_field(0).substr(0, 2)) * 3600.0;
-    //     gga->utc_time_of_day += std::stod(sentence.get_field(0).substr(2, 2)) * 60.0;
-    //     gga->utc_time_of_day += std::stod(sentence.get_field(0).substr(4));
+    // Create a new builder for the fix message.
+    driver::m_builder_gnss_fix = new sensor_msgs_ext::gnss_fix();
+    // Populate the relevant portions of the fix message.
+    // Parse "fix quality" as fix type.
+    driver::m_builder_gnss_fix->type = std::stoi(sentence.get_field(5));
+    // Parse satellite count.
+    if(sentence.has_field(6))
+    {
+        driver::m_builder_gnss_fix->satellite_count = std::stoul(sentence.get_field(6));
+    }
 
-    //     // Parse latitude.
-    //     if(sentence.has_field(1))
-    //     {
-    //         gga->latitude = std::stod(sentence.get_field(1).substr(0,2));
-    //         gga->latitude += std::stod(sentence.get_field(1).substr(2)) / 60.0;
-    //         if(sentence.get_field(2) == "S")
-    //         {
-    //             gga->latitude *= -1;
-    //         }
-    //     }
-    //     else
-    //     {
-    //         gga->latitude = std::numeric_limits<double>::quiet_NaN();
-    //     }
+    // Check if a fix is available.
+    if(driver::m_builder_gnss_fix->type == sensor_msgs_ext::gnss_fix::TYPE_NO_FIX)
+    {
+        // Quit before doing any building of the position message.
+        return;
+    }
 
-    //     // Parse longitude.
-    //     if(sentence.has_field(3))
-    //     {
-    //         gga->longitude = std::stod(sentence.get_field(3).substr(0,2));
-    //         gga->longitude += std::stod(sentence.get_field(3).substr(2)) / 60.0;
-    //         if(sentence.get_field(4) == "W")
-    //         {
-    //             gga->longitude *= -1;
-    //         }
-    //     }
-    //     else
-    //     {
-    //         gga->longitude = std::numeric_limits<double>::quiet_NaN();
-    //     }
-
-    //     // Parse fix quality.
-    //     gga->fix_type = static_cast<nmea::gga::fix_type_t>(std::stoi(sentence.get_field(5)));
-
-    //     // Parse satellite count.
-    //     if(sentence.has_field(6))
-    //     {
-    //         gga->satellite_count = std::stoul(sentence.get_field(6));
-    //     }
-
-    //     // Parse HDOP.
-    //     if(sentence.has_field(7))
-    //     {
-    //         gga->hdop = std::stod(sentence.get_field(7));
-    //     }
-
-    //     // Parse Altitude
-    //     if(sentence.has_field(8))
-    //     {
-    //         gga->altitude = std::stod(sentence.get_field(8));
-    //     }
-    //     else
-    //     {
-    //         gga->altitude = std::numeric_limits<double>::quiet_NaN();
-    //     }
-
-    //     // Parse Geoid Height
-    //     if(sentence.has_field(10))
-    //     {
-    //         gga->geoid_height = std::stod(sentence.get_field(10));
-    //     }
-    //     else
-    //     {
-    //         gga->geoid_height = std::numeric_limits<double>::quiet_NaN();
-    //     }
-
-    //     // Parse DGPS age.
-    //     if(sentence.has_field(12))
-    //     {
-    //         gga->dgps_age = std::stod(sentence.get_field(12));
-    //     }
-    //     else
-    //     {
-    //         gga->dgps_age = std::numeric_limits<double>::quiet_NaN();
-    //     }
-
-    //     // Parse DGPS station ID.
-    //     if(sentence.has_field(13))
-    //     {
-    //         gga->dgps_id = std::stoul(sentence.get_field(13));
-    //     }
-
-    //     // Raise the callback.
-    //     driver::m_callback_gga(gga);
-    // }
+    // Create a new builder for the position message.
+    driver::m_builder_gnss_position = new sensor_msgs_ext::gnss_position();
+    // Populate the relevant portions of the position message.
+    driver::m_builder_gnss_position->frame_id = driver::p_frame_id;
+    // Parse latitude.
+    if(sentence.has_field(1))
+    {
+        driver::m_builder_gnss_position->latitude = std::stod(sentence.get_field(1).substr(0,2));
+        driver::m_builder_gnss_position->latitude += std::stod(sentence.get_field(1).substr(2)) / 60.0;
+        if(sentence.get_field(2) == "S")
+        {
+            driver::m_builder_gnss_position->latitude *= -1;
+        }
+    }
+    else
+    {
+        driver::m_builder_gnss_position->latitude = std::numeric_limits<double>::quiet_NaN();
+    }
+    // Parse longitude.
+    if(sentence.has_field(3))
+    {
+        driver::m_builder_gnss_position->longitude = std::stod(sentence.get_field(3).substr(0,2));
+        driver::m_builder_gnss_position->longitude += std::stod(sentence.get_field(3).substr(2)) / 60.0;
+        if(sentence.get_field(4) == "W")
+        {
+            driver::m_builder_gnss_position->longitude *= -1;
+        }
+    }
+    else
+    {
+        driver::m_builder_gnss_position->longitude = std::numeric_limits<double>::quiet_NaN();
+    }
+    // Parse Altitude
+    if(sentence.has_field(8))
+    {
+        driver::m_builder_gnss_position->altitude = std::stod(sentence.get_field(8));
+    }
+    else
+    {
+        driver::m_builder_gnss_position->altitude = std::numeric_limits<double>::quiet_NaN();
+    }
 }
 void driver::handle_gsa(const nmea::sentence& sentence)
 {
-    ROS_INFO("got gsa");
-    // // Check if callback is set.
-    // if(driver::m_callback_gsa)
-    // {
-    //     // Create a new GSA instance.
-    //     auto gsa = std::make_shared<nmea::gsa>();
+    // Pull the fix mode as it will be used for both messages.
+    uint8_t mode = std::stoi(sentence.get_field(1))-1;
 
-    //     // Parse mode.
-    //     std::string mode_selection = sentence.get_field(0);
-    //     if(mode_selection == "A")
-    //     {
-    //         gsa->mode_selection = nmea::gsa::mode_selection_t::AUTOMATIC;
-    //     }
-    //     else if(mode_selection == "M")
-    //     {
-    //         gsa->mode_selection = nmea::gsa::mode_selection_t::MANUAL;
-    //     }
+    // Check if fix builder is set by a previous gga message.
+    if(driver::m_builder_gnss_fix)
+    {
+        // Parse mode.
+        std::string mode_selection = sentence.get_field(0);
+        if(mode_selection == "A")
+        {
+            driver::m_builder_gnss_fix->mode_selection = sensor_msgs_ext::gnss_fix::MODE_SELECTION_AUTOMATIC;
+        }
+        else if(mode_selection == "M")
+        {
+            driver::m_builder_gnss_fix->mode_selection = sensor_msgs_ext::gnss_fix::MODE_SELECTION_MANUAL;
+        }
+        // Parse fix type.
+        driver::m_builder_gnss_fix->mode = mode;
 
-    //     // Parse fix type.
-    //     gsa->mode = static_cast<nmea::gsa::mode_t>(std::stoi(sentence.get_field(1))-1);
+        // Message is now built. Send message.
+        driver::m_publisher_gnss_fix.publish(*driver::m_builder_gnss_fix);
+        delete driver::m_builder_gnss_fix;
+        driver::m_builder_gnss_fix = nullptr;
+    }
 
-    //     // Read in satellite PRNs.
-    //     for(uint32_t i = 0; i < 12; ++i)
-    //     {
-    //         if(sentence.has_field(2+i))
-    //         {
-    //             gsa->satellites.push_back(std::stoul(sentence.get_field(2+i)));
-    //         }
-    //     }
+    // Check if position builder is set by a previous gga message.
+    if(driver::m_builder_gnss_position)
+    {
+        // Set fix_3d boolean field.
+        driver::m_builder_gnss_position->fix_3d = mode == sensor_msgs_ext::gnss_fix::MODE_3D;
 
-    //     // Parse PDOP
-    //     if(sentence.has_field(14))
-    //     {
-    //         gsa->pdop = std::stod(sentence.get_field(14));
-    //     }
-    //     else
-    //     {
-    //         gsa->pdop = std::numeric_limits<float>::quiet_NaN();
-    //     }
+        // Parse DOPs
+        double hdop = std::numeric_limits<double>::quiet_NaN();
+        double vdop = std::numeric_limits<double>::quiet_NaN();
+        // Parse HDOP
+        if(sentence.has_field(15))
+        {
+            hdop = std::stod(sentence.get_field(15));
+            // Set has_covariance to true.
+            driver::m_builder_gnss_position->has_covariance = true;
+        }
+        // Parse VDOP
+        if(sentence.has_field(16))
+        {
+            vdop = std::stod(sentence.get_field(16));
+            // Set has_covariance to true.
+            driver::m_builder_gnss_position->has_covariance = true;
+        }
 
-    //     // Parse HDOP
-    //     if(sentence.has_field(15))
-    //     {
-    //         gsa->hdop = std::stod(sentence.get_field(15));
-    //     }
-    //     else
-    //     {
-    //         gsa->hdop = std::numeric_limits<float>::quiet_NaN();
-    //     }
+        // From wikipedia: https://en.wikipedia.org/wiki/Error_analysis_for_the_Global_Positioning_System
+        // 3*sigma_r = UERE
+        // sigma_rc = sqrt(DOP^2 * sigma_r^2  + sigma_numerical^2)
+        // Calculate cov_h = HDOP^2 * (UERE/3)^2 + 1^2, cov_v = VDOP^2 * (UERE/3)^2 + 1^2
+        double cov_h = std::pow(static_cast<double>(hdop), 2.0) * std::pow((driver::p_uere / 3.0), 2.0) + 1.0;
+        double cov_v = std::pow(static_cast<double>(vdop), 2.0) * std::pow((driver::p_uere / 3.0), 2.0) + 1.0;
+        driver::m_builder_gnss_position->covariance = {cov_h, 0.0, 0.0,
+                                                       0.0, cov_h, 0.0,
+                                                       0.0, 0.0, cov_v};
 
-    //     // Parse VDOP
-    //     if(sentence.has_field(16))
-    //     {
-    //         gsa->vdop = std::stod(sentence.get_field(16));
-    //     }
-    //     else
-    //     {
-    //         gsa->vdop = std::numeric_limits<float>::quiet_NaN();
-    //     }
-
-    //     // Raise callback for GSA sentence.
-    //     driver::m_callback_gsa(gsa);
-    // }
+        // Message is now built. Send message.
+        driver::m_publisher_gnss_position.publish(*driver::m_builder_gnss_position);
+        delete driver::m_builder_gnss_position;
+        driver::m_builder_gnss_position = nullptr;
+    }
 }
 void driver::handle_rmc(const nmea::sentence& sentence)
 {
-    ROS_INFO("got rmc");
-    // // Check if callback exists.
-    // if(driver::m_callback_rmc)
-    // {
-    //     // Create RMC instance.
-    //     auto rmc = std::make_shared<nmea::rmc>();
+    // Check for a fix before using the RMC message for anything.
+    if(sentence.get_field(1) == "V")
+    {
+        return;
+    }
 
-    //     // Time Field (idx 0): hhmmss.sss
-    //     // Date Field (idx 8): ddmmyy
-    //     std::tm time_struct;
-    //     // Convert date + hours + minutes to double.
-    //     std::string field_time = sentence.get_field(0);
-    //     std::string field_date = sentence.get_field(8);
-    //     time_struct.tm_hour = std::stoi(field_time.substr(0, 2));
-    //     time_struct.tm_min = std::stoi(field_time.substr(2, 2));
-    //     time_struct.tm_mday = std::stoi(field_date.substr(0,2));
-    //     time_struct.tm_mon = std::stoi(field_date.substr(2,2)) - 1;
-    //     time_struct.tm_year = std::stoi(field_date.substr(4, 2)) + 100;
-    //     rmc->utc_time = static_cast<double>(timegm(&time_struct));
-    //     // Parse and add in seconds.
-    //     rmc->utc_time += std::stod(field_time.substr(4));
+    // Create time reference message.
+    sensor_msgs_ext::time_reference message_time_reference;
+    // Populate time reference message.
+    message_time_reference.source = driver::p_frame_id;
+    // Time Field (idx 0): hhmmss.sss
+    // Date Field (idx 8): ddmmyy
+    std::tm time_struct;
+    // Convert date + hours + minutes to seconds.
+    std::string field_time = sentence.get_field(0);
+    std::string field_date = sentence.get_field(8);
+    time_struct.tm_hour = std::stoi(field_time.substr(0, 2));
+    time_struct.tm_min = std::stoi(field_time.substr(2, 2));
+    time_struct.tm_mday = std::stoi(field_date.substr(0,2));
+    time_struct.tm_mon = std::stoi(field_date.substr(2,2)) - 1;
+    time_struct.tm_year = std::stoi(field_date.substr(4, 2)) + 100;
+    double utc_seconds = static_cast<double>(timegm(&time_struct));
+    // Parse and add in seconds.
+    utc_seconds += std::stod(field_time.substr(4));
+    message_time_reference.utc_time = ros::Time(utc_seconds);
+    // Publish message.
+    driver::m_publisher_time_reference.publish(message_time_reference);
 
-    //     // Parse status.
-    //     std::string status_indicator = sentence.get_field(1);
-    //     if(status_indicator == "A")
-    //     {
-    //         rmc->status = nmea::rmc::status_t::ACTIVE;
-    //     }
-    //     else if(status_indicator == "v")
-    //     {
-    //         rmc->status = nmea::rmc::status_t::VOID;
-    //     }
-
-    //     // Parse latitude.
-    //     if(sentence.has_field(2))
-    //     {
-    //         std::string field_latitude = sentence.get_field(2);
-    //         rmc->latitude = std::stod(field_latitude.substr(0,2));
-    //         rmc->latitude += std::stod(field_latitude.substr(2)) / 60.0;
-    //         if(sentence.get_field(3) == "S")
-    //         {
-    //             rmc->latitude *= -1;
-    //         }
-    //     }
-    //     else
-    //     {
-    //         rmc->latitude = std::numeric_limits<double>::quiet_NaN();
-    //     }
-
-    //     // Parse longitude.
-    //     if(sentence.has_field(4))
-    //     {
-    //         std::string field_longitude = sentence.get_field(4);
-    //         rmc->longitude = std::stod(field_longitude.substr(0,2));
-    //         rmc->longitude += std::stod(field_longitude.substr(2)) / 60.0;
-    //         if(sentence.get_field(5) == "W")
-    //         {
-    //             rmc->longitude *= -1;
-    //         }
-    //     }
-    //     else
-    //     {
-    //         rmc->longitude = std::numeric_limits<double>::quiet_NaN();
-    //     }
-
-    //     // Parse ground speed.
-    //     if(sentence.has_field(6))
-    //     {
-    //         rmc->ground_speed = std::stod(sentence.get_field(6));
-    //     }
-    //     else
-    //     {
-    //         rmc->ground_speed = std::numeric_limits<double>::quiet_NaN();
-    //     }
-
-    //     // Parse track true north.
-    //     if(sentence.has_field(7))
-    //     {
-    //         rmc->track_true = std::stod(sentence.get_field(7));
-    //     }
-    //     else
-    //     {
-    //         rmc->track_true = std::numeric_limits<double>::quiet_NaN();
-    //     }
-
-    //     // Parse magnetic variation.
-    //     if(sentence.has_field(9))
-    //     {
-    //         rmc->magnetic_variation = std::stod(sentence.get_field(9));
-    //     }
-    //     else
-    //     {
-    //         rmc->magnetic_variation = std::numeric_limits<double>::quiet_NaN();
-    //     }
-
-    //     // Parse the mode.
-    //     std::string mode_indicator = sentence.get_field(10);
-    //     if(mode_indicator == "N")
-    //     {
-    //         rmc->mode = nmea::rmc::mode_t::INVALID;
-    //     }
-    //     else if(mode_indicator == "A")
-    //     {
-    //         rmc->mode = nmea::rmc::mode_t::AUTONOMOUS;
-    //     }
-    //     else if(mode_indicator == "D")
-    //     {
-    //         rmc->mode = nmea::rmc::mode_t::DIFFERENTIAL;
-    //     }
-    //     else if(mode_indicator == "E")
-    //     {
-    //         rmc->mode = nmea::rmc::mode_t::ESTIMATED;
-    //     }
-    //     else if(mode_indicator == "M")
-    //     {
-    //         rmc->mode = nmea::rmc::mode_t::MANUAL;
-    //     }
-
-    //     // Raise callback.
-    //     driver::m_callback_rmc(rmc);
-    // }
+    // Create track message.
+    sensor_msgs_ext::gnss_track message_gnss_track;
+    // Populate message.
+    message_gnss_track.reference = sensor_msgs_ext::gnss_track::REFERENCE_TRUE_NORTH;
+    // Parse ground speed.
+    if(sentence.has_field(6))
+    {
+        message_gnss_track.velocity = std::stod(sentence.get_field(6));
+    }
+    // Parse track true north.
+    if(sentence.has_field(7))
+    {
+        message_gnss_track.heading = std::stod(sentence.get_field(7));
+    }
+    // Publish message.
+    driver::m_publisher_gnss_track.publish(message_gnss_track);
 }
