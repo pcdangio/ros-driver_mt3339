@@ -38,7 +38,7 @@ To build from source, clone the latest version from this repository into your ca
 
 Run the driver with the following command:
 
-        rosrun driver_mt3339 node
+        rosrun driver_mt3339 driver_mt3339
 
 ## Nodes
 
