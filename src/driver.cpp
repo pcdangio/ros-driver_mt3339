@@ -554,7 +554,8 @@ void driver::handle_rmc(const nmea::sentence& sentence)
     // Parse track true north.
     if(sentence.has_field(7))
     {
-        message_gnss_track.heading = std::stod(sentence.get_field(7));
+        // Parse degrees and convert to radians.
+        message_gnss_track.heading = std::stod(sentence.get_field(7)) * M_PI / 180.0;
     }
     // Publish message.
     driver::m_publisher_gnss_track.publish(message_gnss_track);
