@@ -23,7 +23,7 @@ The driver_mt3339 package has been tested under [ROS] Melodic and Ubuntu 18.04. 
 
 - [Robot Operating System (ROS)](http://wiki.ros.org) (middleware for robotics)
 - [serial](http://wiki.ros.org/serial) (ROS serial package)
-- [sensor_msgs](http://wiki.ros.org/sensor_msgs) (ROS sensor_msgs)
+- [sensor_msgs_ext](https://github.com/pcdangio/ros-sensor_msgs_ext) (ROS sensor_msgs)
 
 #### Building
 
@@ -48,55 +48,54 @@ A driver for interacting with the [MT3339] GPS.  Enables configuration and readi
 
 
 #### Published Topics
-* **`gps/position`** ([sensor_msgs/NavSatFix](http://docs.ros.org/api/sensor_msgs/html/msg/NavSatFix.html))
+* **`gnss/fix`** ([sensor_msgs_ext/gnss_fix](https://github.com/pcdangio/ros-sensor_msgs_ext/blob/master/msg/gnss_fix.msg))
 
-        The GPS position measured by the sensor.
+        The status of the sensor's GNSS fix.
 
-* **`gps/time`** ([sensor_msgs/TimeReference](http://docs.ros.org/api/sensor_msgs/html/msg/TimeReference.html))
+* **`gnss/position`** ([sensor_msgs_ext/gnss_position](https://github.com/pcdangio/ros-sensor_msgs_ext/blob/master/msg/gnss_position.msg))
 
-        The current UTC time measured by the sensor.
+        The current GNSS position. Only published while a fix is available.
+
+* **`gnss/track`** ([sensor_msgs_ext/gnss_track](https://github.com/pcdangio/ros-sensor_msgs_ext/blob/master/msg/gnss_track.msg))
+
+        The current GNSS track. Only published while a fix is available.
+
+* **`gnss/time`** ([sensor_msgs_ext/time_reference](https://github.com/pcdangio/ros-sensor_msgs_ext/blob/master/msg/time_reference.msg))
+
+        The current UTC time measured by the sensor. Only published while a fix is available.
 
 
-#### Runtime Parameters
+#### Parameters
 
 * **`~/serial_port`** (string, default: /dev/ttyAMA0)
 
         The serial port connected to the sensor.
 
-* **`~/baud_rate`** (uint32, default: 9600)
+* **`~/baud_rate`** (uint32, default: 38400)
 
         The baud rate to use for serial communication with the sensor.
 
-* **`~/scan_rate`** (double, default: 15)
+* **`~/connection_settle_time`** (uint32, default: 300)
 
-        The rate in Hz at which to scan the serial port for new NMEA messages.
+        The number of milliseconds to wait after opening the serial port and test connectivity to the sensor.
 
-* **`~/uere`** (double, default: 6.74)
+* **`~/timeout`** (uint32, default: 300)
 
-        The User Equivalent Range Error (UERE) representing the total pseudorange error budget.  This is typically 6.74 for C/A, and 6.0 for P(Y).
+        The number of milliseconds to wait for message responses from the sensor.
 
-#### Configuration Parameters
-
-These parameters should only be changed when needed, and not set prior to every run.  These parameters will be updated in the sensor's flash memory and will be preserved over power cycles.
-
-* **`~/update_baud`** (int, default: -1)
-
-        Changes the baud rate of the MT3339 GPS.  Possible values are:
-        4800 bps
-        9600 bps
-        14400 bps
-        19200 bps
-        38400 bps
-        57600 bps
-        115200 bps
-        The default value of -1 instructs the node to ignore updating the baud rate.
-
-* **`~/update_nmea_rate`** (unsigned int, default: -1)
+* **`~/update_rate`** (uint32, default: 100)
 
         Changes the position update rate of the MT3339 GPS in milliseconds.
         The acceptable rates are between 100ms and 10,000ms.
         Position fixes are output once every period specified, so 100ms = 10Hz.
-        The default value of -1 instructs the node to ignore updating the update rate.
+
+* **`~/frame_id`** (string, default: mt3339)
+
+        The name of the coordinate frame that the sensor is located in.
+
+* **`~/uere`** (double, default: 6.74)
+
+        The User Equivalent Range Error (UERE) representing the total pseudorange error budget.  This is typically 6.74 for C/A, and 6.0 for P(Y).
 
 ## Bugs & Feature Requests
 
