@@ -23,7 +23,7 @@ The driver_mt3339 package has been tested under [ROS] Melodic and Ubuntu 18.04. 
 
 - [Robot Operating System (ROS)](http://wiki.ros.org) (middleware for robotics)
 - [serial](http://wiki.ros.org/serial) (ROS serial package)
-- [sensor_msgs_ext](https://github.com/pcdangio/ros-sensor_msgs_ext) (ROS sensor_msgs)
+- [sensor_msgs_ext](https://github.com/pcdangio/ros-sensor_msgs_ext) (ROS extended sensor messages)
 
 #### Building
 
