@@ -406,7 +406,6 @@ void driver::handle_gga(const nmea::sentence& sentence)
     // Create a new builder for the position message.
     driver::m_builder_gnss_position = new sensor_msgs_ext::gnss_position();
     // Populate the relevant portions of the position message.
-    driver::m_builder_gnss_position->frame_id = driver::p_frame_id;
     // Parse latitude.
     if(sentence.has_field(1))
     {
@@ -523,7 +522,6 @@ void driver::handle_rmc(const nmea::sentence& sentence)
     // Create time reference message.
     sensor_msgs_ext::time_reference message_time_reference;
     // Populate time reference message.
-    message_time_reference.source = driver::p_frame_id;
     // Time Field (idx 0): hhmmss.sss
     // Date Field (idx 8): ddmmyy
     std::tm time_struct;
