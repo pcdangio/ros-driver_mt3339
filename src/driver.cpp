@@ -24,6 +24,7 @@ driver::driver(int32_t argc, char **argv)
     ros::NodeHandle public_node;
     driver::m_publisher_gnss_fix = public_node.advertise<sensor_msgs_ext::gnss_fix>("gnss/fix", 1);
     driver::m_publisher_gnss_position = public_node.advertise<sensor_msgs_ext::gnss_position>("gnss/position", 1);
+    driver::m_publisher_covariance = public_node.advertise<sensor_msgs_ext::covariance>("gnss/position/covariance", 1);
     driver::m_publisher_gnss_track = public_node.advertise<sensor_msgs_ext::gnss_track>("gnss/track", 1);
     driver::m_publisher_time_reference = public_node.advertise<sensor_msgs_ext::time_reference>("gnss/time", 1);
     
@@ -484,26 +485,29 @@ void driver::handle_gsa(const nmea::sentence& sentence)
         if(sentence.has_field(15))
         {
             hdop = std::stod(sentence.get_field(15));
-            // Set has_covariance to true.
-            driver::m_builder_gnss_position->has_covariance = true;
         }
         // Parse VDOP
         if(sentence.has_field(16))
         {
             vdop = std::stod(sentence.get_field(16));
-            // Set has_covariance to true.
-            driver::m_builder_gnss_position->has_covariance = true;
         }
 
+        // Calculate covariance and publish.
         // From wikipedia: https://en.wikipedia.org/wiki/Error_analysis_for_the_Global_Positioning_System
         // 3*sigma_r = UERE
         // sigma_rc = sqrt(DOP^2 * sigma_r^2  + sigma_numerical^2)
         // Calculate cov_h = HDOP^2 * (UERE/3)^2 + 1^2, cov_v = VDOP^2 * (UERE/3)^2 + 1^2
         double cov_h = std::pow(static_cast<double>(hdop), 2.0) * std::pow((driver::p_uere / 3.0), 2.0) + 1.0;
         double cov_v = std::pow(static_cast<double>(vdop), 2.0) * std::pow((driver::p_uere / 3.0), 2.0) + 1.0;
-        driver::m_builder_gnss_position->covariance = {cov_h, 0.0, 0.0,
-                                                       0.0, cov_h, 0.0,
-                                                       0.0, 0.0, cov_v};
+        // Build covariance message.
+        sensor_msgs_ext::covariance covariance_message;
+        covariance_message.dimensions = 3;
+        covariance_message.covariance.resize(9, 0.0);
+        covariance_message.covariance[0] = cov_h;
+        covariance_message.covariance[5] = cov_h;
+        covariance_message.covariance[8] = cov_v;
+        // Publish covariance message.
+        driver::m_publisher_covariance.publish(covariance_message);
 
         // Message is now built. Send message.
         driver::m_publisher_gnss_position.publish(*driver::m_builder_gnss_position);

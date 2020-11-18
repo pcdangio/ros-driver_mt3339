@@ -12,6 +12,7 @@
 #include <sensor_msgs_ext/gnss_position.h>
 #include <sensor_msgs_ext/gnss_track.h>
 #include <sensor_msgs_ext/time_reference.h>
+#include <sensor_msgs_ext/covariance.h>
 
 #include <boost/thread.hpp>
 
@@ -50,6 +51,8 @@ private:
     ros::Publisher m_publisher_gnss_fix;
     /// \brief Publisher for GPS position information.
     ros::Publisher m_publisher_gnss_position;
+    /// \brief Publisher for GPS position covariance.
+    ros::Publisher m_publisher_covariance;
     /// \brief Publisher for GPS track information.
     ros::Publisher m_publisher_gnss_track;
     /// \brief Publisher for GPS time information.
