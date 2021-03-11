@@ -504,7 +504,7 @@ void driver::handle_gsa(const nmea::sentence& sentence)
         covariance_message.dimensions = 3;
         covariance_message.covariance.resize(9, 0.0);
         covariance_message.covariance[0] = cov_h;
-        covariance_message.covariance[5] = cov_h;
+        covariance_message.covariance[4] = cov_h;
         covariance_message.covariance[8] = cov_v;
         // Publish covariance message.
         driver::m_publisher_covariance.publish(covariance_message);
