@@ -410,8 +410,9 @@ void driver::handle_gga(const nmea::sentence& sentence)
     // Parse latitude.
     if(sentence.has_field(1))
     {
-        driver::m_builder_gnss_position->latitude = std::stod(sentence.get_field(1).substr(0,2));
-        driver::m_builder_gnss_position->latitude += std::stod(sentence.get_field(1).substr(2)) / 60.0;
+        std::string lat_field = sentence.get_field(1);
+        driver::m_builder_gnss_position->latitude = std::stod(lat_field.substr(0,2));
+        driver::m_builder_gnss_position->latitude += std::stod(lat_field.substr(2)) / 60.0;
         if(sentence.get_field(2) == "S")
         {
             driver::m_builder_gnss_position->latitude *= -1;
@@ -424,8 +425,9 @@ void driver::handle_gga(const nmea::sentence& sentence)
     // Parse longitude.
     if(sentence.has_field(3))
     {
-        driver::m_builder_gnss_position->longitude = std::stod(sentence.get_field(3).substr(0,2));
-        driver::m_builder_gnss_position->longitude += std::stod(sentence.get_field(3).substr(2)) / 60.0;
+        std::string lon_field = sentence.get_field(3);
+        driver::m_builder_gnss_position->longitude = std::stod(lon_field.substr(0,3));
+        driver::m_builder_gnss_position->longitude += std::stod(lon_field.substr(3)) / 60.0;
         if(sentence.get_field(4) == "W")
         {
             driver::m_builder_gnss_position->longitude *= -1;
