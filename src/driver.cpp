@@ -217,7 +217,7 @@ void driver::send_sentence(const nmea::sentence& sentence)
 }
 void driver::read_thread()
 {
-    driver::m_port->flushInput();
+    driver::m_port->read(driver::m_port->available());
 
     // Set running flag.
     driver::f_is_reading = true;
