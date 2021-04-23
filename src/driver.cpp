@@ -534,6 +534,7 @@ void driver::handle_rmc(const nmea::sentence& sentence)
     // Convert date + hours + minutes to seconds.
     std::string field_time = sentence.get_field(0);
     std::string field_date = sentence.get_field(8);
+    time_struct.tm_sec = 0;
     time_struct.tm_hour = std::stoi(field_time.substr(0, 2));
     time_struct.tm_min = std::stoi(field_time.substr(2, 2));
     time_struct.tm_mday = std::stoi(field_date.substr(0,2));
