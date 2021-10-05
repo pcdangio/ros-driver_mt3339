@@ -554,7 +554,7 @@ void driver::handle_rmc(const nmea::sentence& sentence)
     // Parse and convert ground speed.
     if(sentence.has_field(6))
     {
-        message_gnss_track.velocity = std::stod(sentence.get_field(6)) / 3.6;
+        message_gnss_track.speed = std::stod(sentence.get_field(6)) / 3.6;
     }
     // Parse track true north.
     if(sentence.has_field(7))
